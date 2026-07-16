@@ -421,7 +421,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER update_room_status_on_session_change
   AFTER UPDATE OF status ON sessions
@@ -499,10 +499,11 @@ CREATE POLICY "profiles_insert_service_role"
   TO service_role
   WITH CHECK (true);
 
--- Allow users to read their own profile
+-- Authenticated users can read public profile fields used in room participant lists.
+-- Profiles currently contain no private fields; access to mutations remains owner-only.
 CREATE POLICY "profiles_select_policy"
   ON profiles FOR SELECT
-  USING (auth.uid() = auth_user_id OR id = auth.uid());
+  USING (auth.uid() IS NOT NULL);
 
 -- Allow users to update their own profile
 CREATE POLICY "profiles_update_policy"
@@ -515,9 +516,8 @@ CREATE POLICY "public_read_languages" ON languages FOR SELECT USING (is_active =
 CREATE POLICY "public_read_levels" ON levels FOR SELECT USING (true);
 CREATE POLICY "public_read_topics" ON topics FOR SELECT USING (is_active = TRUE);
 
--- 5.3. Cards - public read access
-CREATE POLICY "public_read_cards" ON cards FOR SELECT USING (is_active = TRUE);
-CREATE POLICY "public_read_card_vocabulary" ON card_vocabulary FOR SELECT USING (true);
+-- 5.3. Cards are exposed only to the active participant through the
+-- get_active_turn_card function defined below.
 
 -- 5.4. Rooms - authenticated users can create, read active rooms, update/delete own rooms
 CREATE POLICY "rooms_insert_policy"
@@ -560,6 +560,11 @@ CREATE POLICY "sessions_select_policy"
   ON sessions FOR SELECT
   USING (auth.uid() IS NOT NULL);
 
+CREATE POLICY "sessions_update_policy"
+  ON sessions FOR UPDATE
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
+
 -- 5.7. Turns - users can create/read turns in sessions they're in
 CREATE POLICY "turns_insert_policy"
   ON turns FOR INSERT
@@ -568,6 +573,62 @@ CREATE POLICY "turns_insert_policy"
 CREATE POLICY "turns_select_policy"
   ON turns FOR SELECT
   USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "turns_update_policy"
+  ON turns FOR UPDATE
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+GRANT UPDATE ON sessions, turns TO authenticated;
+
+-- Return only card identifiers to the room host while generating turns.
+-- Card content is intentionally not directly selectable by clients.
+CREATE OR REPLACE FUNCTION get_room_card_ids(target_room_id UUID)
+RETURNS TABLE(card_id UUID)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT c.id
+  FROM rooms AS r
+  JOIN profiles AS host ON host.id = r.host_id
+  JOIN cards AS c
+    ON c.topic_id = r.topic_id
+    AND c.language_id = r.language_id
+    AND c.level_id = r.level_id
+    AND c.is_active = TRUE
+  WHERE r.id = target_room_id
+    AND host.auth_user_id = auth.uid();
+$$;
+
+-- Card content can be read only by the profile assigned to the active turn.
+CREATE OR REPLACE FUNCTION get_active_turn_card(target_session_id UUID)
+RETURNS TABLE(topic TEXT, vocabulary TEXT[], question TEXT)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    topic.name,
+    COALESCE(array_agg(vocabulary.word ORDER BY vocabulary.sort_order), ARRAY[]::TEXT[]),
+    card.question
+  FROM turns AS turn
+  JOIN participants AS participant ON participant.id = turn.participant_id
+  JOIN profiles AS profile ON profile.id = participant.profile_id
+  JOIN cards AS card ON card.id = turn.card_id
+  JOIN topics AS topic ON topic.id = card.topic_id
+  LEFT JOIN card_vocabulary AS vocabulary ON vocabulary.card_id = card.id
+  WHERE turn.session_id = target_session_id
+    AND turn.status = 'active'
+    AND profile.auth_user_id = auth.uid()
+  GROUP BY topic.name, card.question;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_room_card_ids(UUID), get_active_turn_card(UUID) TO authenticated;
+
+-- 5.8. Realtime publication
+-- These tables drive the live room experience defined for the MVP.
+ALTER PUBLICATION supabase_realtime ADD TABLE rooms, participants, sessions, turns;
 
 -- 6. VIEWS
 -- ============================================================

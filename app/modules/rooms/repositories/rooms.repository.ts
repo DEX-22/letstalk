@@ -196,7 +196,7 @@ export const roomsRepository = {
     callback: (payload: any) => void,
   ) {
     return client
-      .channel(`room:${roomId}`)
+      .channel(`room:${roomId}:participants`)
       .on(
         'postgres_changes',
         {
@@ -216,7 +216,7 @@ export const roomsRepository = {
     callback: (payload: any) => void,
   ) {
     return client
-      .channel(`room:${roomId}`)
+      .channel(`room:${roomId}:details`)
       .on(
         'postgres_changes',
         {

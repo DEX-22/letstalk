@@ -102,7 +102,10 @@ export const authService = {
         supabaseUser.id,
       )
       if (profile) {
-        return this.mapProfileToAuthUser(profile, AuthProvider.GOOGLE)
+        return this.mapProfileToAuthUser(
+          profile,
+          supabaseUser.is_anonymous ? AuthProvider.GUEST : AuthProvider.GOOGLE,
+        )
       }
     }
 

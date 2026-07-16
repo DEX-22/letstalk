@@ -5,7 +5,9 @@ definePageMeta({
 
 
 import QRCode from '~/modules/rooms/components/QRCode.vue'
+import { useCards } from '~/modules/cards/composables/useCards'
 import { useRooms } from '~/modules/rooms/composables/useRooms'
+import { useSessions } from '~/modules/sessions/composables/useSessions'
 
 const route = useRoute()
 const roomId = route.params.id as string
@@ -20,8 +22,25 @@ const {
   updateRoomSettings,
   subscribeToParticipants,
   subscribeToRoom,
-  unsubscribe,
+  unsubscribe: unsubscribeRooms,
 } = useRooms()
+
+const {
+  currentSession,
+  turns,
+  currentTurn,
+  loading: sessionLoading,
+  error: sessionError,
+  remainingSeconds,
+  loadSession,
+  startSession,
+  endSession,
+  nextParticipant,
+  subscribe: subscribeToSession,
+  unsubscribe: unsubscribeSession,
+} = useSessions()
+
+const { activeCard, error: cardError, loadActiveTurnCard } = useCards()
 
 const showSettings = ref(false)
 const showQRCode = ref(false)
@@ -30,13 +49,16 @@ const isHost = ref(false)
 onMounted(async () => {
   await loadRoom(roomId)
   if (currentRoom.value) {
-    subscribeToParticipants(roomId)
+    await subscribeToParticipants(roomId)
     subscribeToRoom(roomId)
+    await loadSession(roomId, currentRoom.value.turnDuration)
+    subscribeToSession(roomId, currentRoom.value.turnDuration)
   }
 })
 
 onUnmounted(() => {
-  unsubscribe()
+  unsubscribeRooms()
+  unsubscribeSession()
 })
 
 watch(currentRoom, (room) => {
@@ -70,6 +92,31 @@ async function handleLeave() {
   }
 }
 
+async function handleStartSession() {
+  if (!currentRoom.value) return
+  try {
+    await startSession(roomId, currentRoom.value.turnDuration)
+  } catch {
+    // The session composable exposes the error in the UI.
+  }
+}
+
+async function handleEndSession() {
+  try {
+    await endSession()
+  } catch {
+    // The session composable exposes the error in the UI.
+  }
+}
+
+async function handleNextParticipant() {
+  try {
+    await nextParticipant()
+  } catch {
+    // The session composable exposes the error in the UI.
+  }
+}
+
 async function handleUpdateSettings(settings: { name?: string; turnDuration?: number; maxParticipants?: number }) {
   try {
     await updateRoomSettings(roomId, settings)
@@ -86,6 +133,22 @@ const onlineParticipants = computed(() =>
 const host = computed(() =>
   participants.value.find((p) => p.role === 'host')
 )
+
+const formattedTime = computed(() => {
+  const minutes = Math.floor(remainingSeconds.value / 60)
+  const seconds = remainingSeconds.value % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
+
+watch(remainingSeconds, (seconds) => {
+  if (seconds === 0 && currentSession.value?.status === 'active' && isHost.value) {
+    handleNextParticipant()
+  }
+})
+
+watch([currentSession, currentTurn], ([session]) => {
+  loadActiveTurnCard(session?.id ?? null)
+}, { immediate: true })
 </script>
 
 <template>
@@ -111,6 +174,23 @@ const host = computed(() =>
           </p>
         </div>
         <div class="flex gap-2">
+          <Button
+            v-if="isHost && !currentSession"
+            variant="default"
+            size="sm"
+            :loading="sessionLoading"
+            @click="handleStartSession"
+          >
+            Start Session
+          </Button>
+          <Button
+            v-if="isHost && currentSession"
+            variant="outline"
+            size="sm"
+            @click="handleEndSession"
+          >
+            End Session
+          </Button>
           <Button
             v-if="isHost"
             variant="outline"
@@ -172,6 +252,54 @@ const host = computed(() =>
             <p class="text-sm text-slate-300">{{ new Date(currentRoom.createdAt).toLocaleDateString() }}</p>
           </div>
         </div>
+      </div>
+
+      <div v-if="sessionError" class="py-2">
+        <ErrorMessage :message="sessionError" />
+      </div>
+
+      <section v-if="currentSession" class="rounded-xl bg-slate-800 p-4">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Current turn</p>
+            <p class="mt-1 text-lg font-semibold text-slate-100">
+              {{ currentTurn?.participantName ?? 'Preparing next turn' }}
+            </p>
+          </div>
+          <p class="font-mono text-3xl font-bold text-primary-400" aria-live="polite">
+            {{ formattedTime }}
+          </p>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t border-slate-700 pt-3">
+          <p class="text-sm text-slate-400">
+            {{ currentTurn ? `${currentTurn.participantName}'s turn` : 'Preparing next participant' }}
+          </p>
+          <Button v-if="isHost" size="sm" @click="handleNextParticipant">
+            Next Participant
+          </Button>
+        </div>
+      </section>
+
+      <section v-if="activeCard" class="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4">
+        <p class="text-xs font-medium uppercase tracking-wide text-primary-300">{{ activeCard.topic }}</p>
+        <h3 class="mt-2 text-lg font-semibold text-slate-100">Your conversation card</h3>
+        <p class="mt-3 text-base text-slate-100">{{ activeCard.question }}</p>
+        <div v-if="activeCard.vocabulary.length" class="mt-4 border-t border-primary-500/20 pt-3">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Vocabulary</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span
+              v-for="word in activeCard.vocabulary"
+              :key="word"
+              class="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200"
+            >
+              {{ word }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div v-else-if="cardError" class="py-2">
+        <ErrorMessage :message="cardError" />
       </div>
 
       <!-- Participants section -->

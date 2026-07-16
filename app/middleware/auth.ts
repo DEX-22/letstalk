@@ -1,27 +1,18 @@
-import { useAuthStore } from '~/modules/auth/stores/auth.store'
+import { useAuth } from '~/modules/auth/composables/useAuth'
 
 /**
  * Auth middleware — protects routes that require authentication.
  *
  * If the user is not authenticated, redirects to the landing page.
- * The middleware respects the initialization state: if auth hasn't
- * been initialized yet, it waits for it to complete.
+ * It restores the Supabase session before checking the store, so a page
+ * refresh keeps a valid session and unauthenticated visitors go to login.
  */
 export default defineNuxtRouteMiddleware(async () => {
-  const store = useAuthStore()
+  const { initialize, isAuthenticated } = useAuth()
 
-  if (!store.initialized) {
-    await new Promise<void>((resolve) => {
-      const unwatch = store.$subscribe(() => {
-        if (store.initialized) {
-          unwatch()
-          resolve()
-        }
-      })
-    })
-  }
+  await initialize()
 
-  if (!store.isAuthenticated) {
+  if (!isAuthenticated.value) {
     return navigateTo('/')
   }
 })

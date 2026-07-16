@@ -135,16 +135,19 @@ export function useRooms() {
     }
   }
 
-  function subscribeToParticipants(roomId: string) {
+  async function subscribeToParticipants(roomId: string): Promise<void> {
     if (participantsSubscription) {
       participantsSubscription.unsubscribe()
     }
 
-    roomsService.subscribeToParticipants(supabase, roomId, (participants) => {
+    participantsSubscription = await roomsService.subscribeToParticipants(supabase, roomId, (participants) => {
       store.setParticipants(participants)
-    }).then((subscription) => {
-      participantsSubscription = subscription
     })
+
+    // A participant may join after the initial page load but before the
+    // Realtime channel is fully subscribed. Reloading here closes that gap.
+    const participants = await roomsService.getParticipants(supabase, roomId)
+    store.setParticipants(participants)
   }
 
   function subscribeToRoom(roomId: string) {

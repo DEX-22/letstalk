@@ -3,11 +3,17 @@ import { useFormValidation } from '~/shared/composables/useFormValidation'
 import { guestLoginSchema } from '~/modules/auth/validators/auth.validator'
 import { useAuth } from '~/modules/auth/composables/useAuth'
 
-const { loginAsGuest, loginWithGoogle, loading, initialized } = useAuth()
+const { loginAsGuest, loginWithGoogle, loading, initialized, isAuthenticated } = useAuth()
 
 const { errors, handleSubmit, isSubmitting, setFieldValue, useFieldValue } = useFormValidation(guestLoginSchema)
 
 const nameValue = useFieldValue('name')
+
+watch([initialized, isAuthenticated], ([authInitialized, authenticated]) => {
+  if (authInitialized && authenticated) {
+    navigateTo('/rooms')
+  }
+}, { immediate: true })
 
 const onSubmit = handleSubmit(async (values) => {
   try {
@@ -29,7 +35,7 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
 
     <form
-      v-if="!initialized || !loading"
+      v-if="initialized && !loading"
       class="flex w-full flex-col gap-3"
       @submit="onSubmit"
     >

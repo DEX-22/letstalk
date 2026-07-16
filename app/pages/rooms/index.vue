@@ -27,6 +27,11 @@ function handleRoomJoined(roomId: string) {
   showJoinModal.value = false
   navigateTo(`/rooms/${roomId}`)
 }
+
+async function handleLogout() {
+  await logout()
+  await navigateTo('/')
+}
 </script>
 
 <template>
@@ -56,7 +61,7 @@ function handleRoomJoined(roomId: string) {
           {{ user?.role === 'guest' ? 'Guest' : 'Signed in' }}
         </p>
       </div>
-      <Button variant="ghost" size="sm" @click="logout">
+      <Button variant="ghost" size="sm" @click="handleLogout">
         Sign out
       </Button>
     </div>
