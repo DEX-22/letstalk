@@ -10,4 +10,14 @@ export const cardsRepository = {
     const card = (data as ConversationCard[] | null)?.[0]
     return card ?? null
   },
+
+  async getCurrentTurnCard(client: any, sessionId: string): Promise<ConversationCard | null> {
+    const { data, error } = await client.rpc('get_current_turn_card', {
+      target_session_id: sessionId,
+    })
+    if (error) throw new Error(`Failed to load conversation card: ${error.message}`)
+
+    const card = (data as ConversationCard[] | null)?.[0]
+    return card ?? null
+  },
 }

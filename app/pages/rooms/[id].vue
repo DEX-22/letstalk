@@ -5,6 +5,7 @@ definePageMeta({
 
 
 import QRCode from '~/modules/rooms/components/QRCode.vue'
+import { useAuth } from '~/modules/auth/composables/useAuth'
 import { useCards } from '~/modules/cards/composables/useCards'
 import { useRooms } from '~/modules/rooms/composables/useRooms'
 import { useSessions } from '~/modules/sessions/composables/useSessions'
@@ -40,11 +41,23 @@ const {
   unsubscribe: unsubscribeSession,
 } = useSessions()
 
-const { activeCard, error: cardError, loadActiveTurnCard } = useCards()
+const { user } = useAuth()
+const { activeCard, error: cardError, loadCurrentTurnCard } = useCards()
 
 const showSettings = ref(false)
 const showQRCode = ref(false)
 const isHost = ref(false)
+
+const currentParticipant = computed(() => {
+  const currentUser = user.value
+  if (!currentUser || !participants.value) return null
+  return participants.value.find((p) => p.profileId === currentUser.id)
+})
+
+const isMyTurn = computed(() => {
+  if (!currentParticipant.value || !currentTurn.value) return false
+  return currentTurn.value.participantId === currentParticipant.value.id
+})
 
 onMounted(async () => {
   await loadRoom(roomId)
@@ -152,7 +165,7 @@ watch(remainingSeconds, (seconds) => {
 })
 
 watch([currentSession, currentTurn], ([session]) => {
-  loadActiveTurnCard(session?.id ?? null)
+  loadCurrentTurnCard(session?.id ?? null)
 }, { immediate: true })
 </script>
 
@@ -180,15 +193,6 @@ watch([currentSession, currentTurn], ([session]) => {
         </div>
         <div class="flex gap-2">
           <Button
-            v-if="isHost && !currentSession"
-            variant="default"
-            size="sm"
-            :loading="sessionLoading"
-            @click="handleStartSession"
-          >
-            Start Session
-          </Button>
-          <Button
             v-if="isHost && currentSession"
             variant="outline"
             size="sm"
@@ -197,7 +201,7 @@ watch([currentSession, currentTurn], ([session]) => {
             End Session
           </Button>
           <Button
-            v-if="isHost"
+            v-if="isHost && !currentSession"
             variant="outline"
             size="sm"
             @click="showSettings = true"
@@ -222,58 +226,49 @@ watch([currentSession, currentTurn], ([session]) => {
         </div>
       </div>
 
-      <!-- Room info card -->
-      <div class="rounded-xl bg-slate-800 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-slate-400">Room Code</p>
-            <p class="mt-1 text-2xl font-bold tracking-widest text-primary-400">
-              {{ currentRoom.code }}
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm text-slate-400">Status</p>
-            <span class="mt-1 inline-block rounded-full bg-green-600/20 px-3 py-1 text-sm text-green-400">
-              {{ currentRoom.status }}
-            </span>
-          </div>
-        </div>
-
-        <div class="mt-4 grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
-          <div>
-            <p class="text-xs text-slate-500">Turn Duration</p>
-            <p class="text-sm text-slate-300">{{ currentRoom.turnDuration }}s</p>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500">Participants</p>
-            <p class="text-sm text-slate-300">{{ onlineParticipants.length }}/{{ currentRoom.maxParticipants }}</p>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500">Host</p>
-            <p class="text-sm text-slate-300">{{ host?.name ?? currentRoom.hostName }}</p>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500">Created</p>
-            <p class="text-sm text-slate-300">{{ new Date(currentRoom.createdAt).toLocaleDateString() }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="sessionError" class="py-2">
-        <ErrorMessage :message="sessionError" />
-      </div>
-
+      <!-- Session view -->
       <section v-if="currentSession" class="rounded-xl bg-slate-800 p-4">
-        <div class="flex items-center justify-between gap-4">
-          <div>
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Current turn</p>
             <p class="mt-1 text-lg font-semibold text-slate-100">
               {{ currentTurn?.participantName ?? 'Preparing next turn' }}
             </p>
+            <!-- Show the question directly below the current turn's name for other participants -->
+            <p v-if="!isMyTurn && activeCard" class="mt-2 text-sm text-slate-300 italic font-medium border-l-2 border-blue-500/50 pl-3">
+              "{{ activeCard.question }}"
+            </p>
           </div>
-          <p class="font-mono text-3xl font-bold text-primary-400" aria-live="polite">
+          <p class="font-mono text-3xl font-bold text-primary-400 shrink-0" aria-live="polite">
             {{ formattedTime }}
           </p>
+        </div>
+        
+        <!-- Full conversation card: only shown to the user whose turn it is -->
+        <div v-if="isMyTurn && activeCard" class="mt-4 border-t border-slate-700 pt-4">
+          <div class="rounded-xl border border-blue-500/25 bg-blue-950/20 p-5 shadow-lg shadow-blue-950/20 transition-all duration-300">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-400 ring-1 ring-inset ring-blue-500/30 uppercase tracking-wider">
+                Topic: {{ activeCard.topic }}
+              </span>
+            </div>
+            <h4 class="text-lg font-bold text-slate-50 leading-relaxed mb-4">{{ activeCard.question }}</h4>
+            <div v-if="activeCard.vocabulary && activeCard.vocabulary.length > 0" class="border-t border-slate-700/50 pt-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Suggested Vocabulary</p>
+              <div class="flex flex-wrap gap-2">
+                <span 
+                  v-for="word in activeCard.vocabulary" 
+                  :key="word"
+                  class="inline-flex items-center rounded-lg bg-slate-800/80 border border-slate-700/60 hover:bg-slate-700/85 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors shadow-sm"
+                >
+                  {{ word }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="cardError" class="mt-4 border-t border-slate-700 pt-3">
+          <ErrorMessage :message="cardError" />
         </div>
         <div class="mt-4 flex items-center justify-between border-t border-slate-700 pt-3">
           <p class="text-sm text-slate-400">
@@ -285,68 +280,101 @@ watch([currentSession, currentTurn], ([session]) => {
         </div>
       </section>
 
-      <section v-if="activeCard" class="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-primary-300">{{ activeCard.topic }}</p>
-        <h3 class="mt-2 text-lg font-semibold text-slate-100">Your conversation card</h3>
-        <p class="mt-3 text-base text-slate-100">{{ activeCard.question }}</p>
-        <div v-if="activeCard.vocabulary.length" class="mt-4 border-t border-primary-500/20 pt-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Vocabulary</p>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <span
-              v-for="word in activeCard.vocabulary"
-              :key="word"
-              class="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200"
-            >
-              {{ word }}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <div v-else-if="cardError" class="py-2">
-        <ErrorMessage :message="cardError" />
-      </div>
-
-      <!-- Participants section -->
-      <div>
-        <h3 class="mb-3 text-sm font-medium text-slate-400">
-          Participants ({{ onlineParticipants.length }})
-        </h3>
-
-        <div v-if="participants.length === 0" class="py-8">
-          <EmptyState
-            title="No participants yet"
-            description="Share the room code to invite others"
-          />
+      <!-- Room view -->
+      <template v-else>
+        <div v-if="sessionError" class="py-2">
+          <ErrorMessage :message="sessionError" />
         </div>
 
-        <div v-else class="flex flex-col gap-2">
-          <div
-            v-for="participant in participants"
-            :key="participant.id"
-            class="flex items-center gap-3 rounded-xl bg-slate-800 p-3"
+        <div v-if="isHost" class="py-2">
+          <Button
+            variant="default"
+            size="lg"
+            :loading="sessionLoading"
+            @click="handleStartSession"
           >
-            <div class="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-700">
-              <span class="text-sm font-medium text-slate-300">
-                {{ participant.name.charAt(0) }}
-              </span>
-              <span
-                :class="[
-                  'absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-slate-800',
-                  participant.status === 'online' ? 'bg-green-500' :
-                  participant.status === 'away' ? 'bg-yellow-500' : 'bg-slate-500'
-                ]"
-              />
-            </div>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-slate-100">{{ participant.name }}</p>
-              <p class="text-xs text-slate-500">
-                {{ participant.role === 'host' ? 'Host' : 'Participant' }}
+            Start Session
+          </Button>
+        </div>
+
+        <!-- Room info card -->
+        <div class="rounded-xl bg-slate-800 p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-400">Room Code</p>
+              <p class="mt-1 text-2xl font-bold tracking-widest text-primary-400">
+                {{ currentRoom.code }}
               </p>
             </div>
+            <div class="text-right">
+              <p class="text-sm text-slate-400">Status</p>
+              <span class="mt-1 inline-block rounded-full bg-green-600/20 px-3 py-1 text-sm text-green-400">
+                {{ currentRoom.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+            <div>
+              <p class="text-xs text-slate-500">Turn Duration</p>
+              <p class="text-sm text-slate-300">{{ currentRoom.turnDuration }}s</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">Participants</p>
+              <p class="text-sm text-slate-300">{{ onlineParticipants.length }}/{{ currentRoom.maxParticipants }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">Host</p>
+              <p class="text-sm text-slate-300">{{ host?.name ?? currentRoom.hostName }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">Created</p>
+              <p class="text-sm text-slate-300">{{ new Date(currentRoom.createdAt).toLocaleDateString() }}</p>
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Participants section -->
+        <div>
+          <h3 class="mb-3 text-sm font-medium text-slate-400">
+            Participants ({{ onlineParticipants.length }})
+          </h3>
+
+          <div v-if="participants.length === 0" class="py-8">
+            <EmptyState
+              title="No participants yet"
+              description="Share the room code to invite others"
+            />
+          </div>
+
+          <div v-else class="flex flex-col gap-2">
+            <div
+              v-for="participant in participants"
+              :key="participant.id"
+              class="flex items-center gap-3 rounded-xl bg-slate-800 p-3"
+            >
+              <div class="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-700">
+                <span class="text-sm font-medium text-slate-300">
+                  {{ participant.name.charAt(0) }}
+                </span>
+                <span
+                  :class="[
+                    'absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-slate-800',
+                    participant.status === 'online' ? 'bg-green-500' :
+                    participant.status === 'away' ? 'bg-yellow-500' : 'bg-slate-500'
+                  ]"
+                />
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-slate-100">{{ participant.name }}</p>
+                <p class="text-xs text-slate-500">
+                  {{ participant.role === 'host' ? 'Host' : 'Participant' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- Not found state -->
