@@ -253,6 +253,9 @@ watch([currentSession, currentTurn], ([session]) => {
               </span>
             </div>
             <h4 class="text-lg font-bold text-slate-50 leading-relaxed mb-4">{{ activeCard.question }}</h4>
+            <p v-if="activeCard.context" class="text-sm text-slate-300 leading-relaxed mb-4 bg-slate-900/40 rounded-lg p-3 border-l-2 border-slate-500">
+              {{ activeCard.context }}
+            </p>
             <div v-if="activeCard.vocabulary && activeCard.vocabulary.length > 0" class="border-t border-slate-700/50 pt-4">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Suggested Vocabulary</p>
               <div class="flex flex-wrap gap-2">
