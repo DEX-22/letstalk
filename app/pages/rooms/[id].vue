@@ -47,6 +47,15 @@ const { activeCard, error: cardError, loadCurrentTurnCard } = useCards()
 const showSettings = ref(false)
 const showQRCode = ref(false)
 const isHost = ref(false)
+const activeBubbleWord = ref<string | null>(null)
+
+function toggleBubble(word: string) {
+  activeBubbleWord.value = activeBubbleWord.value === word ? null : word
+}
+
+function closeBubble() {
+  activeBubbleWord.value = null
+}
 
 const currentParticipant = computed(() => {
   const currentUser = user.value
@@ -60,6 +69,7 @@ const isMyTurn = computed(() => {
 })
 
 onMounted(async () => {
+  window.addEventListener('click', closeBubble)
   await loadRoom(roomId)
   if (currentRoom.value) {
     await subscribeToParticipants(roomId)
@@ -70,6 +80,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('click', closeBubble)
   unsubscribeRooms()
   unsubscribeSession()
 })
@@ -257,15 +268,44 @@ watch([currentSession, currentTurn], ([session]) => {
               {{ activeCard.context }}
             </p>
             <div v-if="activeCard.vocabulary && activeCard.vocabulary.length > 0" class="border-t border-slate-700/50 pt-4">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Suggested Vocabulary</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Suggested Vocabulary (Click for definition)</p>
               <div class="flex flex-wrap gap-2">
-                <span 
-                  v-for="word in activeCard.vocabulary" 
-                  :key="word"
-                  class="inline-flex items-center rounded-lg bg-slate-800/80 border border-slate-700/60 hover:bg-slate-700/85 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors shadow-sm"
+                <div 
+                  v-for="item in activeCard.vocabulary" 
+                  :key="item.word"
+                  class="relative"
                 >
-                  {{ word }}
-                </span>
+                  <button 
+                    type="button"
+                    class="inline-flex items-center rounded-lg bg-slate-800/80 border border-slate-700/60 hover:bg-slate-700/85 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    @click.stop="toggleBubble(item.word)"
+                  >
+                    {{ item.word }}
+                  </button>
+                  
+                  <!-- Bubble tooltip -->
+                  <Transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="transform opacity-0 scale-95 -translate-y-1"
+                    enter-to-class="transform opacity-100 scale-100 translate-y-0"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="transform opacity-100 scale-100 translate-y-0"
+                    leave-to-class="transform opacity-0 scale-95 -translate-y-1"
+                  >
+                    <div 
+                      v-if="activeBubbleWord === item.word"
+                      class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 w-48 bg-slate-950 border border-slate-700 rounded-lg p-2.5 shadow-xl text-xs text-slate-200 leading-normal pointer-events-auto"
+                      @click.stop
+                    >
+                      <p class="font-semibold text-blue-400 mb-1">{{ item.word }}</p>
+                      <p>{{ item.definition || 'No definition available.' }}</p>
+                      <!-- Arrow -->
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-4 border-transparent border-t-slate-950"></div>
+                      <!-- Arrow border shadow helper -->
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-4 border-transparent border-t-slate-700 -z-10 translate-y-[1px]"></div>
+                    </div>
+                  </Transition>
+                </div>
               </div>
             </div>
           </div>

@@ -603,14 +603,21 @@ $$;
 
 -- Card content can be read only by the profile assigned to the active turn.
 CREATE OR REPLACE FUNCTION get_active_turn_card(target_session_id UUID)
-RETURNS TABLE(topic TEXT, vocabulary TEXT[], question TEXT, context TEXT)
+RETURNS TABLE(topic TEXT, vocabulary JSON, question TEXT, context TEXT)
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
     topic.name,
-    COALESCE(array_agg(vocabulary.word ORDER BY vocabulary.sort_order), ARRAY[]::TEXT[]),
+    COALESCE(
+      (
+        SELECT json_agg(json_build_object('word', cv.word, 'definition', cv.definition) ORDER BY cv.sort_order)
+        FROM card_vocabulary cv
+        WHERE cv.card_id = card.id
+      ),
+      '[]'::json
+    ),
     card.question,
     card.context
   FROM turns AS turn
@@ -618,11 +625,10 @@ AS $$
   JOIN profiles AS profile ON profile.id = participant.profile_id
   JOIN cards AS card ON card.id = turn.card_id
   JOIN topics AS topic ON topic.id = card.topic_id
-  LEFT JOIN card_vocabulary AS vocabulary ON vocabulary.card_id = card.id
   WHERE turn.session_id = target_session_id
     AND turn.status = 'active'
     AND profile.auth_user_id = auth.uid()
-  GROUP BY topic.name, card.question, card.context;
+  GROUP BY topic.name, card.id, card.question, card.context;
 $$;
 
 GRANT EXECUTE ON FUNCTION get_room_card_ids(UUID), get_active_turn_card(UUID) TO authenticated;
