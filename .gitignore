@@ -2,8 +2,7 @@
 .output
 .data
 .nuxt
-.nitro
-.cache
+nitro
 dist
 
 # Node dependencies
@@ -17,8 +16,14 @@ logs
 .DS_Store
 .fleet
 .idea
+*.local
 
-# Local env files
+# Environment
 .env
-.env.*
-!.env.example
+.env.local
+.env.production
+
+# Test reports
+coverage
+test-results
+playwright-report
