@@ -1,6 +1,6 @@
-import { _ as __nuxt_component_0 } from './server.mjs';
-import { defineComponent, mergeProps, withCtx, createTextVNode, useSSRContext } from 'vue';
-import { ssrRenderAttrs, ssrRenderComponent, ssrRenderSlot, ssrInterpolate } from 'vue/server-renderer';
+import { a as useAuth, _ as __nuxt_component_0 } from './server.mjs';
+import { defineComponent, mergeProps, withCtx, createTextVNode, unref, useSSRContext } from 'vue';
+import { ssrRenderAttrs, ssrRenderComponent, ssrInterpolate, ssrRenderSlot } from 'vue/server-renderer';
 import '../nitro/nitro.mjs';
 import 'node:http';
 import 'node:https';
@@ -15,6 +15,7 @@ import 'unhead/server';
 import 'devalue';
 import 'unhead/utils';
 import 'vue-router';
+import 'pinia';
 import 'class-variance-authority';
 import 'clsx';
 import 'tailwind-merge';
@@ -56,6 +57,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "index",
   __ssrInlineRender: true,
   setup(__props) {
+    const { user, logout } = useAuth();
     return (_ctx, _push, _parent, _attrs) => {
       const _component_Button = __nuxt_component_0;
       const _component_EmptyState = __nuxt_component_1;
@@ -70,6 +72,23 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
           } else {
             return [
               createTextVNode(" Create Room ")
+            ];
+          }
+        }),
+        _: 1
+      }, _parent));
+      _push(`</div><div class="flex items-center gap-3 rounded-xl bg-slate-800 p-3"><div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600"><span class="text-sm font-medium text-white">${ssrInterpolate(unref(user)?.name?.charAt(0) ?? "?")}</span></div><div class="flex-1"><p class="text-sm font-medium text-slate-100">${ssrInterpolate(unref(user)?.name)}</p><p class="text-xs text-slate-400">${ssrInterpolate(unref(user)?.role === "guest" ? "Guest" : "Signed in")}</p></div>`);
+      _push(ssrRenderComponent(_component_Button, {
+        variant: "ghost",
+        size: "sm",
+        onClick: unref(logout)
+      }, {
+        default: withCtx((_, _push2, _parent2, _scopeId) => {
+          if (_push2) {
+            _push2(` Sign out `);
+          } else {
+            return [
+              createTextVNode(" Sign out ")
             ];
           }
         }),
@@ -92,4 +111,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=index-Bd6fDgUH.mjs.map
+//# sourceMappingURL=index-DsuLmzVX.mjs.map

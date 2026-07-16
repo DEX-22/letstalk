@@ -75,13 +75,13 @@ CREATE TABLE profiles (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   metadata      JSONB NOT NULL DEFAULT '{}'::JSONB,
 
-  -- Guest users are identified by a UUID stored in localStorage.
+  -- Guest users can be identified by a UUID stored in localStorage (no auth_user_id)
+  -- or by anonymous sign-in (has auth_user_id).
   -- Authenticated users are identified by their auth.users entry.
-  -- A profile must have either an auth_user_id (authenticated) or
-  -- be identifiable by id (guest). This constraint ensures data integrity.
+  -- This constraint ensures data integrity.
   CONSTRAINT profiles_identification_check
     CHECK (
-      (role = 'guest' AND auth_user_id IS NULL) OR
+      (role = 'guest') OR
       (role = 'authenticated' AND auth_user_id IS NOT NULL)
     )
 );
@@ -472,10 +472,87 @@ CREATE TRIGGER check_participant_limit_before_insert
   FOR EACH ROW
   EXECUTE FUNCTION check_room_participant_limit();
 
--- 5. VIEWS
+-- 5. ROW LEVEL SECURITY POLICIES
 -- ============================================================
 
--- 5.1. Active rooms with participant count (dashboard)
+-- Enable RLS on all tables
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE languages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE levels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE card_vocabulary ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE turns ENABLE ROW LEVEL SECURITY;
+
+-- 5.1. Profiles policies
+-- Allow anyone to create a profile (for guest users)
+CREATE POLICY "profiles_insert_policy"
+  ON profiles FOR INSERT
+  WITH CHECK (true);
+
+-- Allow users to read their own profile
+CREATE POLICY "profiles_select_policy"
+  ON profiles FOR SELECT
+  USING (auth.uid() = auth_user_id OR id = auth.uid());
+
+-- Allow users to update their own profile
+CREATE POLICY "profiles_update_policy"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = auth_user_id OR id = auth.uid())
+  WITH CHECK (auth.uid() = auth_user_id OR id = auth.uid());
+
+-- 5.2. Languages, Levels, Topics - public read access
+CREATE POLICY "public_read_languages" ON languages FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "public_read_levels" ON levels FOR SELECT USING (true);
+CREATE POLICY "public_read_topics" ON topics FOR SELECT USING (is_active = TRUE);
+
+-- 5.3. Cards - public read access
+CREATE POLICY "public_read_cards" ON cards FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "public_read_card_vocabulary" ON card_vocabulary FOR SELECT USING (true);
+
+-- 5.4. Rooms - authenticated users can create, read active rooms
+CREATE POLICY "rooms_insert_policy"
+  ON rooms FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "rooms_select_policy"
+  ON rooms FOR SELECT
+  USING (status IN ('waiting', 'active'));
+
+-- 5.5. Participants - users can join rooms, read participants in rooms they're in
+CREATE POLICY "participants_insert_policy"
+  ON participants FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "participants_select_policy"
+  ON participants FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- 5.6. Sessions - users can create/read sessions in rooms they're in
+CREATE POLICY "sessions_insert_policy"
+  ON sessions FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "sessions_select_policy"
+  ON sessions FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- 5.7. Turns - users can create/read turns in sessions they're in
+CREATE POLICY "turns_insert_policy"
+  ON turns FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "turns_select_policy"
+  ON turns FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- 6. VIEWS
+-- ============================================================
+
+-- 6.1. Active rooms with participant count (dashboard)
 CREATE VIEW active_rooms AS
 SELECT
   r.id,
@@ -504,7 +581,7 @@ WHERE r.status IN ('waiting', 'active')
 GROUP BY r.id, l.name, l.code, t.name, t.slug, lv.level, lv.name, p.name, p.avatar_url
 ORDER BY r.created_at DESC;
 
--- 5.2. Session details with participant names and card info
+-- 6.2. Session details with participant names and card info
 CREATE VIEW session_details AS
 SELECT
   s.id AS session_id,

@@ -1,1 +1,0 @@
-import{d as s,h as a,o as t,c as l,a as o,r as c}from"./BKXS09bI.js";const n={class:"flex min-h-dvh flex-col bg-slate-950"},r={class:"mx-auto flex w-full max-w-lg flex-1 flex-col px-4"},_=s({__name:"default",setup(d){return a({htmlAttrs:{class:"dark"}}),(e,f)=>(t(),l("div",n,[o("main",r,[c(e.$slots,"default")])]))}});export{_ as default};

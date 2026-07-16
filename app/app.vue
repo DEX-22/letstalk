@@ -1,13 +1,9 @@
 <script setup lang="ts">
-useHead({
-  title: "Let's Talk",
-  meta: [
-    {
-      name: 'description',
-      content: 'Guided conversation sessions for language practice',
-    },
-  ],
-})
+import { useAuth } from '~/modules/auth/composables/useAuth'
+
+// Initialize auth on app load
+const { initialize } = useAuth()
+await initialize()
 </script>
 
 <template>

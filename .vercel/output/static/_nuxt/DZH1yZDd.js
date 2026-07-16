@@ -1,0 +1,1 @@
+import{d as t,u as s,o,c as a,a as c,t as n,b as l}from"./DM7oiKo2.js";const r={class:"flex flex-1 flex-col gap-4 py-6"},_={class:"text-xl font-semibold text-slate-100"},m=t({__name:"[id]",setup(i){const e=s();return(p,d)=>(o(),a("div",r,[c("h2",_," Room "+n(l(e).params.id),1)]))}});export{m as default};

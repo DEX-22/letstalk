@@ -49,6 +49,7 @@ export default defineNuxtConfig({
   supabase: {
     url: process.env.SUPABASE_URL || '',
     key: process.env.SUPABASE_KEY || '',
+    types: '~/shared/types/database.ts',
     redirectOptions: {
       login: '/',
       callback: '/',
@@ -60,6 +61,10 @@ export default defineNuxtConfig({
     strict: true,
     typeCheck: true,
     shim: false,
+  },
+
+  alias: {
+    '@modules': '../modules',
   },
 
   imports: {

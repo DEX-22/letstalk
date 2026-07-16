@@ -1,6 +1,6 @@
 import { defineComponent, mergeProps, useSSRContext } from 'vue';
 import { ssrRenderAttrs, ssrRenderSlot } from 'vue/server-renderer';
-import { a as useHead } from './server.mjs';
+import { c as useHead } from './server.mjs';
 import '../nitro/nitro.mjs';
 import 'node:http';
 import 'node:https';
@@ -15,6 +15,7 @@ import 'unhead/server';
 import 'devalue';
 import 'unhead/utils';
 import 'vue-router';
+import 'pinia';
 import 'class-variance-authority';
 import 'clsx';
 import 'tailwind-merge';
@@ -43,4 +44,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=default-ZzSQKPrj.mjs.map
+//# sourceMappingURL=default-IX8pVnkU.mjs.map

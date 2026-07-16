@@ -15,6 +15,7 @@ import 'unhead/server';
 import 'devalue';
 import 'unhead/utils';
 import 'vue-router';
+import 'pinia';
 import 'class-variance-authority';
 import 'clsx';
 import 'tailwind-merge';
@@ -37,4 +38,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=_id_-B1xq_QsP.mjs.map
+//# sourceMappingURL=_id_-E4dcGjIM.mjs.map

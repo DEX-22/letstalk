@@ -1,7 +1,8 @@
-import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { hasInjectionContext, inject, defineComponent, mergeProps, unref, getCurrentInstance, defineAsyncComponent, h, computed, shallowRef, provide, shallowReactive, ref, Suspense, Fragment, useSSRContext, createApp, withCtx, createVNode, createTextVNode, onErrorCaptured, onServerPrefetch, resolveDynamicComponent, reactive, effectScope, nextTick, getCurrentScope, toRef, isReadonly, isRef, isShallow, isReactive, toRaw, customRef } from 'vue';
-import { k as getContext, $ as $fetch, l as defu, c as createError$1, m as executeAsync, n as hasProtocol, o as joinURL, p as getHeader, w as withQuery, s as sanitizeStatusCode, q as parseURL, e as encodePath, r as decodePath, t as setCookie, v as klona, x as getRequestHeader, y as isEqual, z as getCookie, A as deleteCookie } from '../nitro/nitro.mjs';
+import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { computed, hasInjectionContext, inject, defineComponent, mergeProps, unref, getCurrentInstance, defineAsyncComponent, h, shallowRef, provide, shallowReactive, ref, Suspense, Fragment, useSSRContext, createApp, withAsyncContext, withCtx, createVNode, createTextVNode, onErrorCaptured, onServerPrefetch, resolveDynamicComponent, reactive, effectScope, nextTick, getCurrentScope, toRef, isReadonly, isRef, isShallow, isReactive, toRaw, customRef } from 'vue';
+import { k as hasProtocol, l as joinURL, w as withQuery, s as sanitizeStatusCode, p as parseURL, e as encodePath, m as decodePath, n as getContext, $ as $fetch, o as defu, c as createError$1, q as executeAsync, r as getHeader, t as setCookie, v as klona, x as getRequestHeader, y as isEqual, z as getCookie, A as deleteCookie } from '../nitro/nitro.mjs';
 import { u as useHead$1, h as headSymbol, b as baseURL } from '../routes/renderer.mjs';
 import { useRoute as useRoute$1, RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
+import { defineStore, createPinia } from 'pinia';
 import { ssrRenderAttrs, ssrRenderSlot, ssrRenderComponent, ssrInterpolate, ssrRenderSuspense, ssrRenderVNode } from 'vue/server-renderer';
 import { cva } from 'class-variance-authority';
 import { clsx } from 'clsx';
@@ -584,7 +585,7 @@ const navigateTo = (to, options) => {
     return Promise.resolve();
   }
   const encodedTo = typeof to === "string" ? encodeRoutePath(to) : to;
-  return options?.replace ? router.replace(encodedTo) : router.push(encodedTo);
+  return router.push(encodedTo);
 };
 function resolveRouteObject(to) {
   return withQuery(to.path || "", to.query || {}) + (to.hash || "");
@@ -659,7 +660,7 @@ function freezeHead(head2) {
     head2.push = realPush;
   };
 }
-const unhead__53AVEKGS_Gi_z0waJ4jUwCBuXPSiYhalNbKb4oQHp4 = /* @__PURE__ */ defineNuxtPlugin({
+const unhead_5Em_efFI7QxO1qJq34YM6iXJr5ylEMZtjNkgtwQW2cc = /* @__PURE__ */ defineNuxtPlugin({
   name: "nuxt:head",
   enforce: "pre",
   setup(nuxtApp) {
@@ -702,33 +703,26 @@ function getRouteRules(arg) {
     return {};
   }
 }
-const __nuxt_page_meta$2 = {
-  title: "Room"
-};
-const __nuxt_page_meta$1 = {
-  title: "Rooms"
-};
 const __nuxt_page_meta = {
-  title: "Welcome"
+  title: "Room"
 };
 const _routes = [
   {
     name: "rooms-id",
     path: "/rooms/:id()",
-    meta: __nuxt_page_meta$2 || {},
-    component: () => import('./_id_-B1xq_QsP.mjs')
+    meta: __nuxt_page_meta || {},
+    component: () => import('./_id_-E4dcGjIM.mjs')
   },
   {
     name: "rooms",
     path: "/rooms",
-    meta: __nuxt_page_meta$1 || {},
-    component: () => import('./index-Bd6fDgUH.mjs')
+    meta: { "middleware": "auth" },
+    component: () => import('./index-DsuLmzVX.mjs')
   },
   {
     name: "index",
     path: "/",
-    meta: __nuxt_page_meta || {},
-    component: () => import('./index-BsRFu-B4.mjs')
+    component: () => import('./index-CxFoSDV9.mjs')
   }
 ];
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
@@ -876,7 +870,9 @@ const globalMiddleware = [
   validate,
   manifest_45route_45rule
 ];
-const namedMiddleware = {};
+const namedMiddleware = {
+  auth: () => import('./auth-Bu_9iQ46.mjs')
+};
 Object.assign(/* @__PURE__ */ Object.create(null), {});
 const pageIslandRoutes = Object.assign(/* @__PURE__ */ Object.create(null), {});
 const plugin = /* @__PURE__ */ defineNuxtPlugin({
@@ -22193,7 +22189,7 @@ const reducers = [
   ["Ref", (data) => isRef(data) && data.value],
   ["Reactive", (data) => isReactive(data) && toRaw(data)]
 ];
-const revive_payload_server_Jx9qUK2DzVscd0QeAf4plucDdCATdvi3yJem_H55LSo = /* @__PURE__ */ defineNuxtPlugin({
+const revive_payload_server_48m1LdDAt5oHUDUdP6sOJCIuAeyBGt6l_jM3sjCIa9Y = /* @__PURE__ */ defineNuxtPlugin({
   name: "nuxt:revive-payload:server",
   setup() {
     for (const [reducer, fn] of reducers) {
@@ -22394,23 +22390,28 @@ const plugin_server_XlivkfYBOcHtXydUVsxvbfczHZpJKCMwq769UkFyeKk = /* @__PURE__ *
   });
   nuxtApp.provide("colorMode", colorMode);
 });
-const prerender_server_vaJXBAEVj74M2Gh4bSN_UkXrcPy164zXeJ0XmQ7Gkm0 = /* @__PURE__ */ defineNuxtPlugin(async () => {
+const pinia_Xt4ah3e5jk0UoiEaPgsHj6ScVf7qGtTSKw1_OGX5b0M = /* @__PURE__ */ defineNuxtPlugin((nuxtApp) => {
+  const pinia = createPinia();
+  nuxtApp.vueApp.use(pinia);
+});
+const prerender_server_g2K956coRuyRjCXvVD7vN13xZFL9ga2btynQhIn7frk = /* @__PURE__ */ defineNuxtPlugin(async () => {
   {
     return;
   }
 });
 const plugins = [
-  unhead__53AVEKGS_Gi_z0waJ4jUwCBuXPSiYhalNbKb4oQHp4,
+  unhead_5Em_efFI7QxO1qJq34YM6iXJr5ylEMZtjNkgtwQW2cc,
   plugin,
   supabase_server_LD3l3PlxdJt1kDAI6eTyRYyLVnXt3NZgjHOrAos_ias,
-  revive_payload_server_Jx9qUK2DzVscd0QeAf4plucDdCATdvi3yJem_H55LSo,
+  revive_payload_server_48m1LdDAt5oHUDUdP6sOJCIuAeyBGt6l_jM3sjCIa9Y,
   components_plugin_4kY4pyzJIYX99vmMAAIorFf3CnAaptHitJgf7JxiED8,
   auth_redirect_vkXibr14SCSk3LrpDKYigdtt3KQPwIskUL_aVcdXAss,
   plugin_server_XlivkfYBOcHtXydUVsxvbfczHZpJKCMwq769UkFyeKk,
-  prerender_server_vaJXBAEVj74M2Gh4bSN_UkXrcPy164zXeJ0XmQ7Gkm0
+  pinia_Xt4ah3e5jk0UoiEaPgsHj6ScVf7qGtTSKw1_OGX5b0M,
+  prerender_server_g2K956coRuyRjCXvVD7vN13xZFL9ga2btynQhIn7frk
 ];
 const layouts = {
-  default: defineAsyncComponent(() => import('./default-ZzSQKPrj.mjs').then((m) => m.default || m))
+  default: defineAsyncComponent(() => import('./default-IX8pVnkU.mjs').then((m) => m.default || m))
 };
 const routeRulesMatcher = _routeRulesMatcher;
 const LayoutLoader = defineComponent({
@@ -22647,19 +22648,275 @@ function normalizeSlot(slot, data) {
   const slotContent = slot(data);
   return slotContent.length === 1 ? h(slotContent[0]) : h(Fragment, void 0, slotContent);
 }
+const authRepository = {
+  async signInWithGoogle(client) {
+    const { error } = await client.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${(void 0).location.origin}/`
+      }
+    });
+    if (error) {
+      throw new Error(`Google sign-in failed: ${error.message}`);
+    }
+  },
+  async signOut(client) {
+    const { error } = await client.auth.signOut();
+    if (error) {
+      throw new Error(`Sign out failed: ${error.message}`);
+    }
+  },
+  async getSupabaseUser(client) {
+    const { data } = await client.auth.getUser();
+    return data.user;
+  },
+  async createProfile(client, data) {
+    const { data: profile, error } = await client.from("profiles").insert(data).select().single();
+    if (error) {
+      throw new Error(`Failed to create profile: ${error.message}`);
+    }
+    return profile;
+  },
+  async getProfileByAuthUserId(client, authUserId) {
+    const { data } = await client.from("profiles").select().eq("auth_user_id", authUserId).maybeSingle();
+    return data;
+  },
+  async getProfileById(client, id) {
+    const { data } = await client.from("profiles").select().eq("id", id).maybeSingle();
+    return data;
+  },
+  async updateProfileName(client, id, name) {
+    const { error } = await client.from("profiles").update({ name }).eq("id", id);
+    if (error) {
+      throw new Error(`Failed to update profile: ${error.message}`);
+    }
+  }
+};
+const AUTH_CONSTANTS = {
+  GUEST_ID_KEY: "letstalk_guest_id",
+  GUEST_NAME_KEY: "letstalk_guest_name"
+};
+var AuthProvider = /* @__PURE__ */ ((AuthProvider2) => {
+  AuthProvider2["GUEST"] = "guest";
+  AuthProvider2["GOOGLE"] = "google";
+  return AuthProvider2;
+})(AuthProvider || {});
+const authService = {
+  getOrCreateGuestId() {
+    const existing = localStorage.getItem(AUTH_CONSTANTS.GUEST_ID_KEY);
+    if (existing) {
+      return existing;
+    }
+    const id = crypto.randomUUID();
+    localStorage.setItem(AUTH_CONSTANTS.GUEST_ID_KEY, id);
+    return id;
+  },
+  getStoredGuestName() {
+    return localStorage.getItem(AUTH_CONSTANTS.GUEST_NAME_KEY);
+  },
+  persistGuestName(name) {
+    localStorage.setItem(AUTH_CONSTANTS.GUEST_NAME_KEY, name);
+  },
+  clearGuestData() {
+    localStorage.removeItem(AUTH_CONSTANTS.GUEST_ID_KEY);
+    localStorage.removeItem(AUTH_CONSTANTS.GUEST_NAME_KEY);
+  },
+  async loginAsGuest(client, name) {
+    const guestId = this.getOrCreateGuestId();
+    const existingProfile = await authRepository.getProfileById(client, guestId);
+    if (existingProfile) {
+      if (existingProfile.name !== name) {
+        await authRepository.updateProfileName(client, guestId, name);
+        this.persistGuestName(name);
+      }
+      return this.mapProfileToAuthUser(existingProfile, AuthProvider.GUEST);
+    }
+    const profile = await authRepository.createProfile(client, {
+      id: guestId,
+      auth_user_id: null,
+      name,
+      role: "guest"
+    });
+    this.persistGuestName(name);
+    return this.mapProfileToAuthUser(profile, AuthProvider.GUEST);
+  },
+  async loginWithGoogle(client) {
+    await authRepository.signInWithGoogle(client);
+  },
+  async handleGoogleCallback(client) {
+    const supabaseUser = await authRepository.getSupabaseUser(client);
+    if (!supabaseUser) {
+      throw new Error("No user found after Google sign-in");
+    }
+    const existingProfile = await authRepository.getProfileByAuthUserId(
+      client,
+      supabaseUser.id
+    );
+    if (existingProfile) {
+      return this.mapProfileToAuthUser(existingProfile, AuthProvider.GOOGLE);
+    }
+    const profile = await authRepository.createProfile(client, {
+      auth_user_id: supabaseUser.id,
+      name: supabaseUser.user_metadata?.full_name ?? "User",
+      role: "authenticated",
+      avatar_url: supabaseUser.user_metadata?.avatar_url ?? null
+    });
+    return this.mapProfileToAuthUser(profile, AuthProvider.GOOGLE);
+  },
+  async restoreSession(client) {
+    const supabaseUser = await authRepository.getSupabaseUser(client);
+    if (supabaseUser) {
+      const profile = await authRepository.getProfileByAuthUserId(
+        client,
+        supabaseUser.id
+      );
+      if (profile) {
+        return this.mapProfileToAuthUser(profile, AuthProvider.GOOGLE);
+      }
+    }
+    const guestId = localStorage.getItem(AUTH_CONSTANTS.GUEST_ID_KEY);
+    if (guestId) {
+      const profile = await authRepository.getProfileById(client, guestId);
+      if (profile) {
+        return this.mapProfileToAuthUser(profile, AuthProvider.GUEST);
+      }
+    }
+    return null;
+  },
+  async logout(client) {
+    await authRepository.signOut(client);
+    this.clearGuestData();
+  },
+  mapProfileToAuthUser(profile, provider) {
+    return {
+      id: profile.id,
+      authUserId: profile.auth_user_id ?? null,
+      name: profile.name,
+      avatarUrl: profile.avatar_url ?? null,
+      role: profile.role,
+      provider
+    };
+  }
+};
+const useAuthStore = defineStore("auth", {
+  state: () => ({
+    user: null,
+    loading: true,
+    initialized: false
+  }),
+  getters: {
+    isAuthenticated: (state) => state.user !== null,
+    isGuest: (state) => state.user?.role === "guest",
+    isGoogleUser: (state) => state.user?.role === "authenticated",
+    userName: (state) => state.user?.name ?? null,
+    userId: (state) => state.user?.id ?? null
+  },
+  actions: {
+    setUser(user) {
+      this.user = user;
+    },
+    setLoading(loading) {
+      this.loading = loading;
+    },
+    setInitialized(initialized) {
+      this.initialized = initialized;
+    },
+    clearUser() {
+      this.user = null;
+    }
+  }
+});
+const useSupabaseClient = () => {
+  return useNuxtApp().$supabase.client;
+};
+function useAuth() {
+  const client = useSupabaseClient();
+  const store = useAuthStore();
+  async function initialize() {
+    if (store.initialized) {
+      return;
+    }
+    store.setLoading(true);
+    try {
+      const user = await authService.restoreSession(client);
+      store.setUser(user);
+    } catch {
+      store.clearUser();
+    } finally {
+      store.setLoading(false);
+      store.setInitialized(true);
+    }
+  }
+  async function loginAsGuest(name) {
+    store.setLoading(true);
+    try {
+      const user = await authService.loginAsGuest(client, name);
+      store.setUser(user);
+      return user;
+    } catch (error) {
+      store.clearUser();
+      throw error;
+    } finally {
+      store.setLoading(false);
+    }
+  }
+  async function loginWithGoogle() {
+    store.setLoading(true);
+    try {
+      await authService.loginWithGoogle(client);
+    } catch (error) {
+      store.setLoading(false);
+      throw error;
+    }
+  }
+  async function handleGoogleCallback() {
+    store.setLoading(true);
+    try {
+      const user = await authService.handleGoogleCallback(client);
+      store.setUser(user);
+      return user;
+    } catch (error) {
+      store.clearUser();
+      throw error;
+    } finally {
+      store.setLoading(false);
+    }
+  }
+  async function logout() {
+    store.setLoading(true);
+    try {
+      await authService.logout(client);
+      store.clearUser();
+    } catch (error) {
+      throw error;
+    } finally {
+      store.setLoading(false);
+    }
+  }
+  return {
+    // State (reactive)
+    user: computed(() => store.user),
+    loading: computed(() => store.loading),
+    initialized: computed(() => store.initialized),
+    isAuthenticated: computed(() => store.isAuthenticated),
+    isGuest: computed(() => store.isGuest),
+    isGoogleUser: computed(() => store.isGoogleUser),
+    userName: computed(() => store.userName),
+    // Actions
+    initialize,
+    loginAsGuest,
+    loginWithGoogle,
+    handleGoogleCallback,
+    logout
+  };
+}
 const _sfc_main$3 = /* @__PURE__ */ defineComponent({
   __name: "app",
   __ssrInlineRender: true,
-  setup(__props) {
-    useHead({
-      title: "Let's Talk",
-      meta: [
-        {
-          name: "description",
-          content: "Guided conversation sessions for language practice"
-        }
-      ]
-    });
+  async setup(__props) {
+    let __temp, __restore;
+    const { initialize } = useAuth();
+    [__temp, __restore] = withAsyncContext(() => initialize()), await __temp, __restore();
     return (_ctx, _push, _parent, _attrs) => {
       const _component_NuxtLayout = __nuxt_component_0$1;
       const _component_NuxtPage = __nuxt_component_1;
@@ -22845,7 +23102,7 @@ const _sfc_main = {
 const _sfc_setup = _sfc_main.setup;
 _sfc_main.setup = (props, ctx) => {
   const ssrContext = useSSRContext();
-  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-syntax-jsx@7.29.7_@babel+core@7.29.7__@babel+plugin-syntax-typ_601c59b0712455e380ad453f39eb9915/node_modules/nuxt/dist/app/components/nuxt-root.vue");
+  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-syntax-jsx@7.29.7_@babel+core@7.29.7__@babel+plugin-syntax-typ_32face3f3f649ffb48eb58302979593a/node_modules/nuxt/dist/app/components/nuxt-root.vue");
   return _sfc_setup ? _sfc_setup(props, ctx) : void 0;
 };
 let entry;
@@ -22868,5 +23125,5 @@ let entry;
 }
 const entry_default = ((ssrContext) => entry(ssrContext));
 
-export { __nuxt_component_0 as _, useHead as a, entry_default as default, useRoute as u };
+export { __nuxt_component_0 as _, useAuth as a, useAuthStore as b, useHead as c, defineNuxtRouteMiddleware as d, entry_default as default, navigateTo as n, useRoute as u };
 //# sourceMappingURL=server.mjs.map
