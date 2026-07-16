@@ -10,23 +10,6 @@ import { AuthProvider, AUTH_CONSTANTS } from '~/shared/types/constants'
  * This makes the service testable and independent of Nuxt's setup context.
  */
 export const authService = {
-  getOrCreateGuestId(): string {
-    const existing = localStorage.getItem(AUTH_CONSTANTS.GUEST_ID_KEY)
-    if (existing) {
-      return existing
-    }
-
-    // Generate a UUID v4 compatible with all browsers
-    const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0
-      const v = c === 'x' ? r : (r & 0x3) | 0x8
-      return v.toString(16)
-    })
-    
-    localStorage.setItem(AUTH_CONSTANTS.GUEST_ID_KEY, id)
-    return id
-  },
-
   getStoredGuestName(): string | null {
     return localStorage.getItem(AUTH_CONSTANTS.GUEST_NAME_KEY)
   },
@@ -36,7 +19,6 @@ export const authService = {
   },
 
   clearGuestData(): void {
-    localStorage.removeItem(AUTH_CONSTANTS.GUEST_ID_KEY)
     localStorage.removeItem(AUTH_CONSTANTS.GUEST_NAME_KEY)
   },
 
@@ -44,18 +26,16 @@ export const authService = {
     client: any,
     name: string,
   ): Promise<AuthUser> {
-    // First, sign in anonymously to get an auth user
-    // signInAnonymously now returns the user directly after session establishment
+    // Sign in anonymously to get a Supabase auth user
     const user = await authRepository.signInAnonymously(client)
-    
+
     if (!user) {
       throw new Error('Failed to get anonymous user after sign-in')
     }
 
-    const guestId = this.getOrCreateGuestId()
-
-    // Check if profile exists by guest ID first (returning guest)
-    const existingProfile = await authRepository.getProfileById(client, guestId)
+    // Check if profile already exists for this auth_user_id
+    // RLS allows this because auth.uid() = auth_user_id
+    const existingProfile = await authRepository.getProfileByAuthUserId(client, user.id)
 
     if (existingProfile) {
       // Update name if changed
@@ -66,21 +46,9 @@ export const authService = {
       return this.mapProfileToAuthUser(existingProfile, AuthProvider.GUEST)
     }
 
-    // Check if profile exists by auth_user_id (edge case)
-    const profileByAuthId = await authRepository.getProfileByAuthUserId(client, user.id)
 
-    if (profileByAuthId) {
-      if (profileByAuthId.name !== name) {
-        await authRepository.updateProfileName(client, profileByAuthId.id, name)
-      }
-      this.persistGuestName(name)
-      return this.mapProfileToAuthUser(profileByAuthId, AuthProvider.GUEST)
-    }
-
-    // Create new profile with the guest ID from localStorage
-    // Guest users don't need auth_user_id - they're identified by their profile ID
     const profile = await authRepository.createProfile(client, {
-      id: guestId,
+      auth_user_id: user.id,
       name,
       role: 'guest',
     })
@@ -114,6 +82,7 @@ export const authService = {
     }
 
     const profile = await authRepository.createProfile(client, {
+      id: supabaseUser.id,
       auth_user_id: supabaseUser.id,
       name: supabaseUser.user_metadata?.full_name ?? 'User',
       role: 'authenticated',
