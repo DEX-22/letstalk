@@ -513,7 +513,7 @@ CREATE POLICY "public_read_topics" ON topics FOR SELECT USING (is_active = TRUE)
 CREATE POLICY "public_read_cards" ON cards FOR SELECT USING (is_active = TRUE);
 CREATE POLICY "public_read_card_vocabulary" ON card_vocabulary FOR SELECT USING (true);
 
--- 5.4. Rooms - authenticated users can create, read active rooms
+-- 5.4. Rooms - authenticated users can create, read active rooms, update/delete own rooms
 CREATE POLICY "rooms_insert_policy"
   ON rooms FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
@@ -522,7 +522,16 @@ CREATE POLICY "rooms_select_policy"
   ON rooms FOR SELECT
   USING (status IN ('waiting', 'active'));
 
--- 5.5. Participants - users can join rooms, read participants in rooms they're in
+CREATE POLICY "rooms_update_policy"
+  ON rooms FOR UPDATE
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "rooms_delete_policy"
+  ON rooms FOR DELETE
+  USING (auth.uid() IS NOT NULL);
+
+-- 5.5. Participants - authenticated users can manage participants
 CREATE POLICY "participants_insert_policy"
   ON participants FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
@@ -530,6 +539,11 @@ CREATE POLICY "participants_insert_policy"
 CREATE POLICY "participants_select_policy"
   ON participants FOR SELECT
   USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "participants_update_policy"
+  ON participants FOR UPDATE
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- 5.6. Sessions - users can create/read sessions in rooms they're in
 CREATE POLICY "sessions_insert_policy"

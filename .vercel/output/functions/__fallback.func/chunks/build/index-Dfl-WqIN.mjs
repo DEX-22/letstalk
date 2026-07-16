@@ -1,6 +1,7 @@
-import { a as useAuth, n as navigateTo, _ as __nuxt_component_0 } from './server.mjs';
+import { g as useAuth, n as navigateTo, _ as __nuxt_component_0 } from './server.mjs';
+import { _ as __nuxt_component_1 } from './LoadingSpinner-BhnzeBaj.mjs';
 import { defineComponent, mergeProps, unref, withCtx, createTextVNode, useSSRContext } from 'vue';
-import { ssrRenderAttrs, ssrRenderAttr, ssrIncludeBooleanAttr, ssrInterpolate, ssrRenderComponent, ssrRenderClass } from 'vue/server-renderer';
+import { ssrRenderAttrs, ssrRenderAttr, ssrIncludeBooleanAttr, ssrInterpolate, ssrRenderComponent } from 'vue/server-renderer';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm, useField } from 'vee-validate';
 import { z } from 'zod';
@@ -23,40 +24,6 @@ import 'class-variance-authority';
 import 'clsx';
 import 'tailwind-merge';
 
-const _sfc_main$1 = /* @__PURE__ */ defineComponent({
-  __name: "LoadingSpinner",
-  __ssrInlineRender: true,
-  props: {
-    size: { default: "default" },
-    label: { default: "Loading..." }
-  },
-  setup(__props) {
-    return (_ctx, _push, _parent, _attrs) => {
-      _push(`<div${ssrRenderAttrs(mergeProps({
-        class: "flex flex-col items-center justify-center gap-3",
-        role: "status",
-        "aria-live": "polite"
-      }, _attrs))}><span class="${ssrRenderClass([{
-        "h-4 w-4": __props.size === "sm",
-        "h-6 w-6": __props.size === "default",
-        "h-8 w-8": __props.size === "lg"
-      }, "animate-spin rounded-full border-2 border-primary-500 border-t-transparent"])}"></span>`);
-      if (__props.label) {
-        _push(`<span class="text-sm text-slate-400">${ssrInterpolate(__props.label)}</span>`);
-      } else {
-        _push(`<!---->`);
-      }
-      _push(`</div>`);
-    };
-  }
-});
-const _sfc_setup$1 = _sfc_main$1.setup;
-_sfc_main$1.setup = (props, ctx) => {
-  const ssrContext = useSSRContext();
-  (ssrContext.modules || (ssrContext.modules = /* @__PURE__ */ new Set())).add("shared/components/LoadingSpinner.vue");
-  return _sfc_setup$1 ? _sfc_setup$1(props, ctx) : void 0;
-};
-const __nuxt_component_1 = Object.assign(_sfc_main$1, { __name: "LoadingSpinner" });
 function useFormValidation(schema) {
   const typedSchema = toTypedSchema(schema);
   const form = useForm({
@@ -160,4 +127,4 @@ _sfc_main.setup = (props, ctx) => {
 };
 
 export { _sfc_main as default };
-//# sourceMappingURL=index-CxFoSDV9.mjs.map
+//# sourceMappingURL=index-Dfl-WqIN.mjs.map

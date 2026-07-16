@@ -48,18 +48,31 @@ export const authService = {
 
     const guestId = this.getOrCreateGuestId()
 
-    const existingProfile = await authRepository.getProfileByAuthUserId(client, supabaseUser.id)
+    // Check if profile exists by guest ID first (returning guest)
+    const existingProfile = await authRepository.getProfileById(client, guestId)
 
     if (existingProfile) {
+      // Update name if changed
       if (existingProfile.name !== name) {
         await authRepository.updateProfileName(client, existingProfile.id, name)
-        this.persistGuestName(name)
       }
+      this.persistGuestName(name)
       return this.mapProfileToAuthUser(existingProfile, AuthProvider.GUEST)
     }
 
+    // Check if profile exists by auth_user_id (edge case)
+    const profileByAuthId = await authRepository.getProfileByAuthUserId(client, supabaseUser.id)
+
+    if (profileByAuthId) {
+      if (profileByAuthId.name !== name) {
+        await authRepository.updateProfileName(client, profileByAuthId.id, name)
+      }
+      this.persistGuestName(name)
+      return this.mapProfileToAuthUser(profileByAuthId, AuthProvider.GUEST)
+    }
+
+    // Create new profile - let database generate the ID
     const profile = await authRepository.createProfile(client, {
-      id: guestId,
       auth_user_id: supabaseUser.id,
       name,
       role: 'guest',

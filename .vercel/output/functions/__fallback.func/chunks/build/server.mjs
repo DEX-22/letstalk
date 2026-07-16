@@ -1,5 +1,5 @@
 import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { computed, hasInjectionContext, inject, defineComponent, mergeProps, unref, getCurrentInstance, defineAsyncComponent, h, shallowRef, provide, shallowReactive, ref, Suspense, Fragment, useSSRContext, createApp, withAsyncContext, withCtx, createVNode, createTextVNode, onErrorCaptured, onServerPrefetch, resolveDynamicComponent, reactive, effectScope, nextTick, getCurrentScope, toRef, isReadonly, isRef, isShallow, isReactive, toRaw, customRef } from 'vue';
-import { k as hasProtocol, l as joinURL, w as withQuery, s as sanitizeStatusCode, p as parseURL, e as encodePath, m as decodePath, n as getContext, $ as $fetch, o as defu, c as createError$1, q as executeAsync, r as getHeader, t as setCookie, v as klona, x as getRequestHeader, y as isEqual, z as getCookie, A as deleteCookie } from '../nitro/nitro.mjs';
+import { p as parseURL, e as encodePath, k as decodePath, l as hasProtocol, m as isScriptProtocol, n as joinURL, w as withQuery, s as sanitizeStatusCode, o as getContext, $ as $fetch, q as defu, c as createError$1, r as executeAsync, t as getHeader, v as setCookie, x as klona, y as getRequestHeader, z as isEqual, A as getCookie, B as deleteCookie } from '../nitro/nitro.mjs';
 import { u as useHead$1, h as headSymbol, b as baseURL } from '../routes/renderer.mjs';
 import { useRoute as useRoute$1, RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
 import { defineStore, createPinia } from 'pinia';
@@ -269,6 +269,7 @@ if (!("global" in globalThis)) {
   globalThis.global = globalThis;
 }
 const appLayoutTransition = false;
+const nuxtLinkDefaults = { "componentName": "NuxtLink" };
 const appId = "nuxt-app";
 function getNuxtAppCtx(id = appId) {
   return getContext(id, {
@@ -536,10 +537,14 @@ const navigateTo = (to, options) => {
   to ||= "/";
   const toPath = typeof to === "string" ? to : "path" in to ? resolveRouteObject(to) : useRouter().resolve(to).href;
   const isExternalHost = hasProtocol(toPath, { acceptRelative: true });
-  const isExternal = isExternalHost;
+  const isExternal = options?.external || isExternalHost;
   if (isExternal) {
-    {
+    if (!options?.external) {
       throw new Error("Navigating to an external URL is not allowed by default. Use `navigateTo(url, { external: true })`.");
+    }
+    const { protocol } = new URL(toPath, "http://localhost");
+    if (protocol && isScriptProtocol(protocol)) {
+      throw new Error(`Cannot navigate to a URL with '${protocol}' protocol.`);
     }
   }
   const inMiddleware = isProcessingMiddleware();
@@ -554,7 +559,7 @@ const navigateTo = (to, options) => {
         const encodedHeader = encodeURL(location2, isExternalHost);
         const encodedLoc = encodeForHtmlAttr(encodedHeader);
         nuxtApp.ssrContext["~renderResponse"] = {
-          statusCode: sanitizeStatusCode(302, 302),
+          statusCode: sanitizeStatusCode(options?.redirectCode || 302, 302),
           body: `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${encodedLoc}"></head></html>`,
           headers: { location: encodedHeader }
         };
@@ -572,7 +577,9 @@ const navigateTo = (to, options) => {
   }
   if (isExternal) {
     nuxtApp._scope.stop();
-    {
+    if (options?.replace) {
+      (void 0).replace(toPath);
+    } else {
       (void 0).href = toPath;
     }
     if (inMiddleware) {
@@ -585,7 +592,7 @@ const navigateTo = (to, options) => {
     return Promise.resolve();
   }
   const encodedTo = typeof to === "string" ? encodeRoutePath(to) : to;
-  return router.push(encodedTo);
+  return options?.replace ? router.replace(encodedTo) : router.push(encodedTo);
 };
 function resolveRouteObject(to) {
   return withQuery(to.path || "", to.query || {}) + (to.hash || "");
@@ -703,26 +710,23 @@ function getRouteRules(arg) {
     return {};
   }
 }
-const __nuxt_page_meta = {
-  title: "Room"
-};
 const _routes = [
   {
     name: "rooms-id",
     path: "/rooms/:id()",
-    meta: __nuxt_page_meta || {},
-    component: () => import('./_id_-E4dcGjIM.mjs')
+    meta: { "middleware": "auth" },
+    component: () => import('./_id_-CPUfo3El.mjs')
   },
   {
     name: "rooms",
     path: "/rooms",
     meta: { "middleware": "auth" },
-    component: () => import('./index-DsuLmzVX.mjs')
+    component: () => import('./index-CTX_Kkoj.mjs')
   },
   {
     name: "index",
     path: "/",
-    component: () => import('./index-CxFoSDV9.mjs')
+    component: () => import('./index-Dfl-WqIN.mjs')
   }
 ];
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
@@ -871,7 +875,7 @@ const globalMiddleware = [
   manifest_45route_45rule
 ];
 const namedMiddleware = {
-  auth: () => import('./auth-Bu_9iQ46.mjs')
+  auth: () => import('./auth-CLLYW_wE.mjs')
 };
 Object.assign(/* @__PURE__ */ Object.create(null), {});
 const pageIslandRoutes = Object.assign(/* @__PURE__ */ Object.create(null), {});
@@ -22411,7 +22415,7 @@ const plugins = [
   prerender_server_g2K956coRuyRjCXvVD7vN13xZFL9ga2btynQhIn7frk
 ];
 const layouts = {
-  default: defineAsyncComponent(() => import('./default-IX8pVnkU.mjs').then((m) => m.default || m))
+  default: defineAsyncComponent(() => import('./default-B0YQ5O8O.mjs').then((m) => m.default || m))
 };
 const routeRulesMatcher = _routeRulesMatcher;
 const LayoutLoader = defineComponent({
@@ -22660,6 +22664,12 @@ const authRepository = {
       throw new Error(`Google sign-in failed: ${error.message}`);
     }
   },
+  async signInAnonymously(client) {
+    const { error } = await client.auth.signInAnonymously();
+    if (error) {
+      throw new Error(`Anonymous sign-in failed: ${error.message}`);
+    }
+  },
   async signOut(client) {
     const { error } = await client.auth.signOut();
     if (error) {
@@ -22696,6 +22706,23 @@ const AUTH_CONSTANTS = {
   GUEST_ID_KEY: "letstalk_guest_id",
   GUEST_NAME_KEY: "letstalk_guest_name"
 };
+var RoomStatus = /* @__PURE__ */ ((RoomStatus2) => {
+  RoomStatus2["WAITING"] = "waiting";
+  RoomStatus2["ACTIVE"] = "active";
+  RoomStatus2["COMPLETED"] = "completed";
+  return RoomStatus2;
+})(RoomStatus || {});
+var ParticipantRole = /* @__PURE__ */ ((ParticipantRole2) => {
+  ParticipantRole2["HOST"] = "host";
+  ParticipantRole2["PARTICIPANT"] = "participant";
+  return ParticipantRole2;
+})(ParticipantRole || {});
+var ParticipantStatus = /* @__PURE__ */ ((ParticipantStatus2) => {
+  ParticipantStatus2["ONLINE"] = "online";
+  ParticipantStatus2["AWAY"] = "away";
+  ParticipantStatus2["LEFT"] = "left";
+  return ParticipantStatus2;
+})(ParticipantStatus || {});
 var AuthProvider = /* @__PURE__ */ ((AuthProvider2) => {
   AuthProvider2["GUEST"] = "guest";
   AuthProvider2["GOOGLE"] = "google";
@@ -22722,18 +22749,30 @@ const authService = {
     localStorage.removeItem(AUTH_CONSTANTS.GUEST_NAME_KEY);
   },
   async loginAsGuest(client, name) {
+    await authRepository.signInAnonymously(client);
+    const supabaseUser = await authRepository.getSupabaseUser(client);
+    if (!supabaseUser) {
+      throw new Error("Failed to get anonymous user after sign-in");
+    }
     const guestId = this.getOrCreateGuestId();
     const existingProfile = await authRepository.getProfileById(client, guestId);
     if (existingProfile) {
       if (existingProfile.name !== name) {
-        await authRepository.updateProfileName(client, guestId, name);
-        this.persistGuestName(name);
+        await authRepository.updateProfileName(client, existingProfile.id, name);
       }
+      this.persistGuestName(name);
       return this.mapProfileToAuthUser(existingProfile, AuthProvider.GUEST);
     }
+    const profileByAuthId = await authRepository.getProfileByAuthUserId(client, supabaseUser.id);
+    if (profileByAuthId) {
+      if (profileByAuthId.name !== name) {
+        await authRepository.updateProfileName(client, profileByAuthId.id, name);
+      }
+      this.persistGuestName(name);
+      return this.mapProfileToAuthUser(profileByAuthId, AuthProvider.GUEST);
+    }
     const profile = await authRepository.createProfile(client, {
-      id: guestId,
-      auth_user_id: null,
+      auth_user_id: supabaseUser.id,
       name,
       role: "guest"
     });
@@ -22772,13 +22811,6 @@ const authService = {
       );
       if (profile) {
         return this.mapProfileToAuthUser(profile, AuthProvider.GOOGLE);
-      }
-    }
-    const guestId = localStorage.getItem(AUTH_CONSTANTS.GUEST_ID_KEY);
-    if (guestId) {
-      const profile = await authRepository.getProfileById(client, guestId);
-      if (profile) {
-        return this.mapProfileToAuthUser(profile, AuthProvider.GUEST);
       }
     }
     return null;
@@ -23125,5 +23157,5 @@ let entry;
 }
 const entry_default = ((ssrContext) => entry(ssrContext));
 
-export { __nuxt_component_0 as _, useAuth as a, useAuthStore as b, useHead as c, defineNuxtRouteMiddleware as d, entry_default as default, navigateTo as n, useRoute as u };
+export { ParticipantStatus as P, RoomStatus as R, __nuxt_component_0 as _, useSupabaseClient as a, useRouter as b, useNuxtApp as c, useRuntimeConfig as d, entry_default as default, encodeRoutePath as e, nuxtLinkDefaults as f, useAuth as g, ParticipantRole as h, defineNuxtRouteMiddleware as i, useAuthStore as j, useHead as k, navigateTo as n, resolveRouteObject as r, useRoute as u };
 //# sourceMappingURL=server.mjs.map

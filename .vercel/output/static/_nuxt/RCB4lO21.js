@@ -1,0 +1,1 @@
+import{a5 as n,a6 as o,a7 as r,q as u}from"./DwEK1FSr.js";const d=n(async()=>{let t,a;const e=o();if(e.initialized||([t,a]=r(()=>new Promise(i=>{const s=e.$subscribe(()=>{e.initialized&&(s(),i())})})),await t,a()),!e.isAuthenticated)return u("/")});export{d as default};
