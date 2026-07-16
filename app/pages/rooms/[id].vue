@@ -141,7 +141,12 @@ const formattedTime = computed(() => {
 })
 
 watch(remainingSeconds, (seconds) => {
-  if (seconds === 0 && currentSession.value?.status === 'active' && isHost.value) {
+  if (
+    seconds === 0
+    && currentSession.value?.status === 'active'
+    && currentTurn.value
+    && isHost.value
+  ) {
     handleNextParticipant()
   }
 })
