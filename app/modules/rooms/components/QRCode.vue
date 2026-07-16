@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
-
+const route = useRoute()
 const props = defineProps<{
   code: string
   size?: number
@@ -8,7 +8,8 @@ const props = defineProps<{
 
 const qrCodeUrl = computed(() => {
   const qrSize = props.size ?? 200
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(props.code)}`
+  // i need to use full path from domain to uuid room
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${window.location.origin}${route.fullPath}`
 })
 
 const { copy, copied } = useClipboard({ source: computed(() => props.code) })
