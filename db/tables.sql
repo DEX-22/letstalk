@@ -493,6 +493,12 @@ CREATE POLICY "profiles_insert_policy"
   ON profiles FOR INSERT
   WITH CHECK (true);
 
+-- Allow service role to insert profiles (for anonymous auth)
+CREATE POLICY "profiles_insert_service_role"
+  ON profiles FOR INSERT
+  TO service_role
+  WITH CHECK (true);
+
 -- Allow users to read their own profile
 CREATE POLICY "profiles_select_policy"
   ON profiles FOR SELECT

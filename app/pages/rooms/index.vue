@@ -5,6 +5,8 @@ definePageMeta({
 
 import { useRooms } from '~/modules/rooms/composables/useRooms'
 import { useAuth } from '~/modules/auth/composables/useAuth'
+import CreateRoomModal from '~/modules/rooms/components/CreateRoomModal.vue'
+import JoinRoomModal from '~/modules/rooms/components/JoinRoomModal.vue'
 
 const { user, logout } = useAuth()
 const { rooms, loading, error, loadActiveRooms } = useRooms()

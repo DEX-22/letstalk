@@ -16,7 +16,13 @@ export const authService = {
       return existing
     }
 
-    const id = crypto.randomUUID()
+    // Generate a UUID v4 compatible with all browsers
+    const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0
+      const v = c === 'x' ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+    
     localStorage.setItem(AUTH_CONSTANTS.GUEST_ID_KEY, id)
     return id
   },
@@ -39,10 +45,10 @@ export const authService = {
     name: string,
   ): Promise<AuthUser> {
     // First, sign in anonymously to get an auth user
-    await authRepository.signInAnonymously(client)
-
-    const supabaseUser = await authRepository.getSupabaseUser(client)
-    if (!supabaseUser) {
+    // signInAnonymously now returns the user directly after session establishment
+    const user = await authRepository.signInAnonymously(client)
+    
+    if (!user) {
       throw new Error('Failed to get anonymous user after sign-in')
     }
 
@@ -61,7 +67,7 @@ export const authService = {
     }
 
     // Check if profile exists by auth_user_id (edge case)
-    const profileByAuthId = await authRepository.getProfileByAuthUserId(client, supabaseUser.id)
+    const profileByAuthId = await authRepository.getProfileByAuthUserId(client, user.id)
 
     if (profileByAuthId) {
       if (profileByAuthId.name !== name) {
@@ -71,9 +77,10 @@ export const authService = {
       return this.mapProfileToAuthUser(profileByAuthId, AuthProvider.GUEST)
     }
 
-    // Create new profile - let database generate the ID
+    // Create new profile with the guest ID from localStorage
+    // Guest users don't need auth_user_id - they're identified by their profile ID
     const profile = await authRepository.createProfile(client, {
-      auth_user_id: supabaseUser.id,
+      id: guestId,
       name,
       role: 'guest',
     })

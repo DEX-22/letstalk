@@ -3,6 +3,8 @@ definePageMeta({
   middleware: 'auth',
 })
 
+
+import QRCode from '~/modules/rooms/components/QRCode.vue'
 import { useRooms } from '~/modules/rooms/composables/useRooms'
 
 const route = useRoute()

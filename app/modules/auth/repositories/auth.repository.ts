@@ -25,11 +25,34 @@ export const authRepository = {
     }
   },
 
-  async signInAnonymously(client: any): Promise<void> {
-    const { error } = await client.auth.signInAnonymously()
+  async signInAnonymously(client: any): Promise<any> {
+    const { data, error } = await client.auth.signInAnonymously()
     if (error) {
       throw new Error(`Anonymous sign-in failed: ${error.message}`)
     }
+    // Wait for session to be fully established and propagated to RLS
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Refresh session to ensure RLS policies recognize the authentication
+    await client.auth.refreshSession()
+    // Wait a bit more for RLS context to update
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Verify the session is available
+    const { data: { session } } = await client.auth.getSession()
+    if (!session?.user) {
+      throw new Error('Failed to establish anonymous session')
+    }
+    // Return the user from the verified session
+    return session.user
+  },
+
+  async getSupabaseUser(client: any) {
+    const { data } = await client.auth.getUser()
+    return data.user
+  },
+
+  async getSession(client: any) {
+    const { data } = await client.auth.getSession()
+    return data.session
   },
 
   async signOut(client: any): Promise<void> {
@@ -37,11 +60,6 @@ export const authRepository = {
     if (error) {
       throw new Error(`Sign out failed: ${error.message}`)
     }
-  },
-
-  async getSupabaseUser(client: any) {
-    const { data } = await client.auth.getUser()
-    return data.user
   },
 
   async createProfile(
